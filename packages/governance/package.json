@@ -60,7 +60,7 @@
     "localnet:down": "solana-localnet down",
     "localnet:logs": "solana-localnet logs -f",
     "predeploy": "git pull --ff-only && yarn && yarn build",
-    "deploy": "gh-pages -d ../../build/governance --repo https://github.com/solana-labs/oyster-gov",
+    "deploy": "gh-pages -d ../../build/governance --repo https://github.com/UXDProtocol/oyster-uxd",
     "deploy:ar": "arweave deploy-dir ../../build/governance --key-file ",
     "format:fix": "prettier --write \"**/*.+(js|jsx|ts|tsx|json|css|md)\""
   },
@@ -81,7 +81,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/solana-labs/oyster"
+    "url": "https://github.com/UXDProtocol/oyster"
   },
   "homepage": ".",
   "devDependencies": {
