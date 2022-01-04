@@ -5,8 +5,7 @@ import React, {
   useMemo,
   useState,
 } from 'react';
-import { useConnection } from '../contexts/connection';
-import { useWallet } from '../contexts/wallet';
+import { useConnection, useWallet } from '../contexts';
 import { AccountInfo, Connection, PublicKey } from '@solana/web3.js';
 import { AccountLayout, MintInfo, MintLayout, u64 } from '@solana/spl-token';
 import { TokenAccount } from '../models';
@@ -126,6 +125,9 @@ export const cache = {
       return account;
     }
 
+    // Note: If the request to get the account fails the error is captured as a rejected Promise and would stay in pendingCalls forever
+    // It means if the first request fails for a transient reason it would never recover from the state and account would never be returned
+    // TODO: add logic to detect transient errors and remove the Promises from  pendingCalls
     let query = pendingCalls.get(address);
     if (query) {
       return query;
@@ -134,7 +136,7 @@ export const cache = {
     // TODO: refactor to use multiple accounts query with flush like behavior
     query = connection.getAccountInfo(id).then(data => {
       if (!data) {
-        throw new Error('Account not found');
+        throw new Error(`Account ${id.toBase58()} not found`);
       }
 
       return cache.add(id, data, parser);
@@ -231,6 +233,9 @@ export const cache = {
       return mint;
     }
 
+    // Note: If the request to get the mint  fails the error is captured as a rejected Promise and would stay in pendingMintCalls forever
+    // It means if the first request fails for a transient reason it would never recover from the state and mint would never be returned
+    // TODO: add logic to detect transient errors and remove the Promises from  pendingMintCalls
     let query = pendingMintCalls.get(address);
     if (query) {
       return query;
@@ -308,23 +313,21 @@ export const getCachedAccount = (
 
 const UseNativeAccount = () => {
   const connection = useConnection();
-  const { wallet } = useWallet();
+  const { publicKey } = useWallet();
 
   const [nativeAccount, setNativeAccount] = useState<AccountInfo<Buffer>>();
 
   const updateCache = useCallback(
     account => {
-      if (wallet && wallet.publicKey) {
-        const wrapped = wrapNativeAccount(wallet.publicKey, account);
-        if (wrapped !== undefined && wallet) {
-          const id = wallet.publicKey?.toBase58();
-          cache.registerParser(id, TokenAccountParser);
-          genericCache.set(id, wrapped as TokenAccount);
-          cache.emitter.raiseCacheUpdated(id, false, TokenAccountParser);
-        }
+      if (publicKey) {
+        const wrapped = wrapNativeAccount(publicKey, account);
+        const id = publicKey.toBase58();
+        cache.registerParser(id, TokenAccountParser);
+        genericCache.set(id, wrapped as TokenAccount);
+        cache.emitter.raiseCacheUpdated(id, false, TokenAccountParser);
       }
     },
-    [wallet],
+    [publicKey],
   );
 
   useEffect(() => {
@@ -337,22 +340,22 @@ const UseNativeAccount = () => {
     };
 
     (async () => {
-      if (!connection || !wallet?.publicKey) {
+      if (!connection || !publicKey) {
         return;
       }
 
-      const account = await connection.getAccountInfo(wallet.publicKey)
+      const account = await connection.getAccountInfo(publicKey);
       updateAccount(account);
 
-      subId = connection.onAccountChange(wallet.publicKey, updateAccount);
+      subId = connection.onAccountChange(publicKey, updateAccount);
     })();
 
     return () => {
       if (subId) {
         connection.removeAccountChangeListener(subId);
       }
-    }
-  }, [setNativeAccount, wallet, wallet?.publicKey, connection, updateCache]);
+    };
+  }, [setNativeAccount, publicKey, connection, updateCache]);
 
   return { nativeAccount };
 };
@@ -380,7 +383,7 @@ const precacheUserTokenAccounts = async (
 
 export function AccountsProvider({ children = null as any }) {
   const connection = useConnection();
-  const { wallet, connected } = useWallet();
+  const { publicKey } = useWallet();
   const [tokenAccounts, setTokenAccounts] = useState<TokenAccount[]>([]);
   const [userAccounts, setUserAccounts] = useState<TokenAccount[]>([]);
   const { nativeAccount } = UseNativeAccount();
@@ -390,17 +393,17 @@ export function AccountsProvider({ children = null as any }) {
       .byParser(TokenAccountParser)
       .map(id => cache.get(id))
       .filter(
-        a => a && a.info.owner.toBase58() === wallet?.publicKey?.toBase58(),
+        a => a && a.info.owner.toBase58() === publicKey?.toBase58(),
       )
       .map(a => a as TokenAccount);
-  }, [wallet]);
+  }, [publicKey]);
 
   useEffect(() => {
     const accounts = selectUserAccounts().filter(
       a => a !== undefined,
     ) as TokenAccount[];
     setUserAccounts(accounts);
-  }, [nativeAccount, wallet, tokenAccounts, selectUserAccounts]);
+  }, [nativeAccount, tokenAccounts, selectUserAccounts]);
 
   useEffect(() => {
     const subs: number[] = [];
@@ -419,7 +422,6 @@ export function AccountsProvider({ children = null as any }) {
     };
   }, [connection]);
 
-  const publicKey = wallet?.publicKey;
   useEffect(() => {
     if (!connection || !publicKey) {
       setTokenAccounts([]);
@@ -437,7 +439,7 @@ export function AccountsProvider({ children = null as any }) {
         programIds().token,
         info => {
           // TODO: fix type in web3.js
-          const id = (info.accountId as unknown) as string;
+          const id = info.accountId as unknown as string;
           // TODO: do we need a better way to identify layout (maybe a enum identifing type?)
           if (info.accountInfo.data.length === AccountLayout.span) {
             const data = deserializeAccount(info.accountInfo.data);
@@ -455,7 +457,7 @@ export function AccountsProvider({ children = null as any }) {
         connection.removeProgramAccountChangeListener(tokenSubID);
       };
     }
-  }, [connection, connected, publicKey, selectUserAccounts]);
+  }, [connection, publicKey, selectUserAccounts]);
 
   return (
     <AccountsContext.Provider

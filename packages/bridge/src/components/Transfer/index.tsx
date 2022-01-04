@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { notification, Spin, Button } from 'antd';
-import { contexts, TokenAccount, useUserAccounts } from '@oyster/common';
+import { notification, Spin, Button, Popover } from 'antd';
+import { contexts, useUserAccounts, WalletSigner, useWallet } from '@oyster/common';
 import { Input } from '../Input';
 
 import './style.less';
@@ -19,9 +19,9 @@ import { LABELS } from '../../constants';
 import { useCorrectNetwork } from '../../hooks/useCorrectNetwork';
 import { RecentTransactionsTable } from '../RecentTransactionsTable';
 import { useBridge } from '../../contexts/bridge';
+import { WarningOutlined } from '@ant-design/icons';
 
 const { useConnection } = contexts.Connection;
-const { useWallet } = contexts.Wallet;
 
 export const typeToIcon = (type: string, isLast: boolean) => {
   const style: React.CSSProperties = { marginRight: 5 };
@@ -42,7 +42,7 @@ export const typeToIcon = (type: string, isLast: boolean) => {
 export const Transfer = () => {
   const connection = useConnection();
   const bridge = useBridge();
-  const { wallet, connected } = useWallet();
+  const wallet = useWallet();
   const { provider, tokenMap } = useEthereum();
   const { userAccounts } = useUserAccounts();
   const hasCorrespondingNetworks = useCorrectNetwork();
@@ -54,7 +54,7 @@ export const Transfer = () => {
     setLastTypedAccount,
   } = useTokenChainPairState();
 
-
+  const [popoverVisible, setPopoverVisible] = useState(true)
 
   const [request, setRequest] = useState<TransferRequest>({
     from: ASSET_CHAIN.Ethereum,
@@ -85,8 +85,11 @@ export const Transfer = () => {
     });
   }, [A, B, mintAddress, A.info]);
 
-
-  const tokenAccounts = useMemo(() => userAccounts.filter(u => u.info.mint.toBase58() === request.info?.mint), [request.info?.mint])
+  const tokenAccounts = useMemo(
+    () =>
+      userAccounts.filter(u => u.info.mint.toBase58() === request.info?.mint),
+    [request.info?.mint],
+  );
 
   return (
     <>
@@ -111,22 +114,37 @@ export const Transfer = () => {
           }}
           className={'left'}
         />
-        <Button
-          type="primary"
-          className="swap-button"
-          style={{ padding: 0 }}
-          disabled={false}
-          onClick={() => {
-            const from = A.chain;
-            const toChain = B.chain;
-            if (from !== undefined && toChain !== undefined) {
-              A.setChain(toChain);
-              B.setChain(from);
-            }
-          }}
+        <Popover
+          placement="top"
+          title={<span style={{cursor: "pointer"}} onClick={() => setPopoverVisible(false)}>x</span>}
+          content={<span style={{textAlign: "center"}}>
+            <WarningOutlined style={{ fontSize: '40px', color: '#ccae00' }} />
+            <p>This website should be only used to migrate liquidity from Wormhole v1.
+            <br/>Wormhole is upgrading on-chain contracts to v2 in next 2 weeks.</p>
+            <p>To see the tokens you need to connect both wallets first</p>
+            <p>If your SOL -&gt; ETH transaction is taking more than 1 hour, make sure to <br/>
+            to look at the recent transactions table below and click on retry Icon <br/>
+              if the transaction failed</p>
+          </span>}
+          visible={popoverVisible}
         >
-          <span></span>
-        </Button>
+          <Button
+            className="swap-button"
+            style={{ padding: 0 }}
+            disabled={false}
+            onClick={() => {
+              return;
+              // const from = A.chain;
+              // const toChain = B.chain;
+              // if (from !== undefined && toChain !== undefined) {
+              //   A.setChain(toChain);
+              //   B.setChain(from);
+              // }
+            }}
+          >
+            <span></span>
+          </Button>
+        </Popover>
         <Input
           title={`To`}
           asset={request.asset}
@@ -153,7 +171,7 @@ export const Transfer = () => {
         className={'transfer-button'}
         type="primary"
         size="large"
-        disabled={!(A.amount && B.amount) || !connected || !provider}
+        disabled={!(A.amount && B.amount) || !wallet.connected || !provider}
         onClick={async () => {
           if (!wallet || !provider) {
             return;

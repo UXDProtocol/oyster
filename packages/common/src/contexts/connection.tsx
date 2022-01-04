@@ -21,25 +21,19 @@ import {
   TokenListProvider,
   ENV as ChainId,
 } from '@solana/spl-token-registry';
+import {
+  SendTransactionError,
+  SignTransactionError,
+  TransactionTimeoutError,
+} from '../utils/errors';
+import { WalletSigner, WalletNotConnectedError } from './wallet';
 
-export type ENV =
-  | 'mainnet-beta (Serum)'
-  | 'mainnet-beta'
-  | 'mainnet-beta (Serum)'
-  | 'testnet'
-  | 'devnet'
-  | 'localnet'
-  | 'lending';
+export type ENV = 'mainnet-beta' | 'testnet' | 'devnet' | 'localnet';
 
 export const ENDPOINTS = [
   {
-    name: 'mainnet-beta (Serum)' as ENV,
-    endpoint: 'https://solana-api.projectserum.com/',
-    ChainId: ChainId.MainnetBeta,
-  },
-  {
     name: 'mainnet-beta' as ENV,
-    endpoint: 'https://api.mainnet-beta.solana.com',
+    endpoint: 'https://billowing-proud-glitter.solana-mainnet.quiknode.pro/7f49d7f436c2d3af0738270d90dee86962f13a82/',
     ChainId: ChainId.MainnetBeta,
   },
   {
@@ -49,22 +43,12 @@ export const ENDPOINTS = [
   },
   {
     name: 'devnet' as ENV,
-    endpoint: clusterApiUrl('devnet'),
+    endpoint: 'https://explorer-api.devnet.solana.com',
     ChainId: ChainId.Devnet,
   },
   {
     name: 'localnet' as ENV,
     endpoint: 'http://127.0.0.1:8899',
-    ChainId: ChainId.Devnet,
-  },
-  {
-    name: 'Oyster Dev' as ENV,
-    endpoint: 'http://oyster-dev.solana.com/',
-    ChainId: ChainId.Devnet,
-  },
-  {
-    name: 'Lending' as ENV,
-    endpoint: 'https://tln.solana.com/',
     ChainId: ChainId.Devnet,
   },
 ];
@@ -96,6 +80,11 @@ const ConnectionContext = React.createContext<ConnectionConfig>({
   tokenMap: new Map<string, TokenInfo>(),
 });
 
+enum ASSET_CHAIN {
+  Solana = 1,
+  Ethereum = 2,
+}
+
 export function ConnectionProvider({ children = undefined as any }) {
   const [endpoint, setEndpoint] = useLocalStorageState(
     'connectionEndpoint',
@@ -107,12 +96,14 @@ export function ConnectionProvider({ children = undefined as any }) {
     DEFAULT_SLIPPAGE.toString(),
   );
 
-  const connection = useMemo(() => new Connection(endpoint, 'recent'), [
-    endpoint,
-  ]);
-  const sendConnection = useMemo(() => new Connection(endpoint, 'recent'), [
-    endpoint,
-  ]);
+  const connection = useMemo(
+    () => new Connection(endpoint, 'recent'),
+    [endpoint],
+  );
+  const sendConnection = useMemo(
+    () => new Connection(endpoint, 'recent'),
+    [endpoint],
+  );
 
   const env =
     ENDPOINTS.find(end => end.endpoint === endpoint)?.name || ENDPOINTS[0].name;
@@ -130,6 +121,19 @@ export function ConnectionProvider({ children = undefined as any }) {
         )
         .getList();
 
+      // WORMHOLE TOKEN NEEDED
+      list.push({
+        address: '66CgfJQoZkpkrEgC1z4vFJcSFc4V6T5HqbjSSNuqcNJz',
+        chainId: ASSET_CHAIN.Solana,
+        decimals: 9,
+        logoURI:
+          'https://assets.coingecko.com/coins/images/15500/thumb/ibbtc.png?1621077589',
+        name: 'Interest Bearing Bitcoin (Wormhole)',
+        symbol: 'IBBTC',
+        extensions: {
+          address: '0xc4e15973e6ff2a35cc804c2cf9d2a1b817a8b40f',
+        },
+      });
       const knownMints = [...list].reduce((map, item) => {
         map.set(item.address, item);
         return map;
@@ -224,6 +228,7 @@ export const getErrorForTransaction = async (
   txid: string,
 ) => {
   // wait for all confirmation before geting transaction
+
   await connection.confirmTransaction(txid, 'max');
 
   const tx = await connection.getParsedConfirmedTransaction(txid);
@@ -257,7 +262,7 @@ export enum SequenceType {
 
 export const sendTransactions = async (
   connection: Connection,
-  wallet: any,
+  wallet: WalletSigner,
   instructionSet: TransactionInstruction[][],
   signersSet: Account[][],
   sequenceType: SequenceType = SequenceType.Parallel,
@@ -266,6 +271,8 @@ export const sendTransactions = async (
   failCallback: (reason: string, ind: number) => boolean = (txid, ind) => false,
   block?: BlockhashAndFeeCalculator,
 ): Promise<number> => {
+  if (!wallet.publicKey) throw new WalletNotConnectedError();
+
   const unsignedTxns: Transaction[] = [];
 
   if (!block) {
@@ -312,6 +319,7 @@ export const sendTransactions = async (
         successCallback(txid, i);
       })
       .catch(reason => {
+        // @ts-ignore
         failCallback(signedTxns[i], i);
         if (sequenceType == SequenceType.StopOnFailure) {
           breakEarlyObject.breakEarly = true;
@@ -337,7 +345,7 @@ export const sendTransactions = async (
 
 export const sendTransaction = async (
   connection: Connection,
-  wallet: any,
+  wallet: WalletSigner,
   instructions: TransactionInstruction[],
   signers: Account[],
   awaitConfirmation = true,
@@ -345,6 +353,8 @@ export const sendTransaction = async (
   includesFeePayer: boolean = false,
   block?: BlockhashAndFeeCalculator,
 ) => {
+  if (!wallet.publicKey) throw new WalletNotConnectedError();
+
   let transaction = new Transaction();
   instructions.forEach(instruction => transaction.add(instruction));
   transaction.recentBlockhash = (
@@ -364,8 +374,13 @@ export const sendTransaction = async (
   if (signers.length > 0) {
     transaction.partialSign(...signers);
   }
+
   if (!includesFeePayer) {
-    transaction = await wallet.signTransaction(transaction);
+    try {
+      transaction = await wallet.signTransaction(transaction);
+    } catch (ex) {
+      throw new SignTransactionError(ex);
+    }
   }
 
   const rawTransaction = transaction.serialize();
@@ -378,32 +393,67 @@ export const sendTransaction = async (
   let slot = 0;
 
   if (awaitConfirmation) {
-    const confirmation = await awaitTransactionSignatureConfirmation(
+    const confirmationStatus = await awaitTransactionSignatureConfirmation(
       txid,
       DEFAULT_TIMEOUT,
       connection,
       commitment,
     );
 
-    slot = confirmation?.slot || 0;
+    slot = confirmationStatus?.slot || 0;
 
-    if (confirmation?.err) {
-      const errors = await getErrorForTransaction(connection, txid);
+    if (confirmationStatus?.err) {
+      let errors: string[] = [];
+      try {
+        // TODO: This call always throws errors and delays error feedback
+        //       It needs to be investigated but for now I'm commenting it out
+        // errors = await getErrorForTransaction(connection, txid);
+      } catch (ex) {
+        console.error('getErrorForTransaction() error', ex);
+      }
+
+      if ('timeout' in confirmationStatus.err) {
+        notify({
+          message: `Transaction hasn't been confirmed within ${
+            DEFAULT_TIMEOUT / 1000
+          }s. Please check on Solana Explorer`,
+          description: (
+            <>
+              <ExplorerLink
+                address={txid}
+                type="transaction"
+                short
+                connection={connection}
+              />
+            </>
+          ),
+          type: 'warn',
+        });
+        throw new TransactionTimeoutError(txid);
+      }
+
       notify({
-        message: 'Transaction failed...',
+        message: 'Transaction error',
         description: (
           <>
             {errors.map(err => (
               <div>{err}</div>
             ))}
-            <ExplorerLink address={txid} type="transaction" />
+            <ExplorerLink
+              address={txid}
+              type="transaction"
+              short
+              connection={connection}
+            />
           </>
         ),
         type: 'error',
       });
 
-      throw new Error(
-        `Raw transaction ${txid} failed (${JSON.stringify(status)})`,
+      throw new SendTransactionError(
+        `Transaction ${txid} failed (${JSON.stringify(confirmationStatus)})`,
+        txid,
+        confirmationStatus.err,
       );
     }
   }
@@ -413,7 +463,7 @@ export const sendTransaction = async (
 
 export const sendTransactionWithRetry = async (
   connection: Connection,
-  wallet: any,
+  wallet: WalletSigner,
   instructions: TransactionInstruction[],
   signers: Account[],
   commitment: Commitment = 'singleGossip',
@@ -421,6 +471,8 @@ export const sendTransactionWithRetry = async (
   block?: BlockhashAndFeeCalculator,
   beforeSend?: () => void,
 ) => {
+  if (!wallet.publicKey) throw new WalletNotConnectedError();
+
   let transaction = new Transaction();
   instructions.forEach(instruction => transaction.add(instruction));
   transaction.recentBlockhash = (
@@ -460,7 +512,7 @@ export const getUnixTs = () => {
   return new Date().getTime() / 1000;
 };
 
-const DEFAULT_TIMEOUT = 15000;
+const DEFAULT_TIMEOUT = 30000;
 
 export async function sendSignedTransaction({
   signedTransaction,
@@ -542,7 +594,7 @@ export async function sendSignedTransaction({
   return { txid, slot };
 }
 
-async function simulateTransaction(
+export async function simulateTransaction(
   connection: Connection,
   transaction: Transaction,
   commitment: Commitment,
@@ -649,6 +701,10 @@ async function awaitTransactionSignatureConfirmation(
     })();
   })
     .catch(err => {
+      if (err.timeout && status) {
+        status.err = { timeout: true };
+      }
+
       //@ts-ignore
       if (connection._signatureSubscriptions[subId])
         connection.removeSignatureListener(subId);
