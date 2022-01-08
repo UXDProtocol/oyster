@@ -6,7 +6,6 @@ import './style.less'; // Don't remove this line, it will break dark mode if you
 import { Background } from '../../components/Background';
 import { useHistory } from 'react-router-dom';
 
-import { RegisterRealmButton } from './registerRealmButton';
 import { LABELS } from '../../constants';
 
 import { RealmBadge } from '../../components/RealmBadge/realmBadge';
@@ -14,6 +13,8 @@ import { useWalletTokenOwnerRecords } from '../../hooks/apiHooks';
 import { RealmDepositBadge } from '../../components/RealmDepositBadge/realmDepositBadge';
 import { useRpcContext } from '../../hooks/useRpcContext';
 import { getRealmUrl } from '../../tools/routeTools';
+
+import { ProgramActionBar } from './buttons/programActionBar';
 
 export const HomeView = () => {
   const history = useHistory();
@@ -23,29 +24,29 @@ export const HomeView = () => {
 
   const realmItems = useMemo(() => {
     return realms
-      .sort((r1, r2) => r1.info.name.localeCompare(r2.info.name))
+      .sort((r1, r2) => r1.account.name.localeCompare(r2.account.name))
       .map(r => {
         const communityTokenOwnerRecord = tokenOwnerRecords.find(
           tor =>
-            tor.info.governingTokenMint.toBase58() ===
-            r.info.communityMint.toBase58(),
+            tor.account.governingTokenMint.toBase58() ===
+            r.account.communityMint.toBase58(),
         );
 
         const councilTokenOwnerRecord =
-          r.info.config.councilMint &&
+          r.account.config.councilMint &&
           tokenOwnerRecords.find(
             tor =>
-              tor.info.governingTokenMint.toBase58() ===
-              r.info.config.councilMint!.toBase58(),
+              tor.account.governingTokenMint.toBase58() ===
+              r.account.config.councilMint!.toBase58(),
           );
 
         return {
           href: getRealmUrl(r.pubkey, programIdBase58),
-          title: r.info.name,
+          title: r.account.name,
           badge: (
             <RealmBadge
-              communityMint={r.info.communityMint}
-              councilMint={r.info.config.councilMint}
+              communityMint={r.account.communityMint}
+              councilMint={r.account.config.councilMint}
             ></RealmBadge>
           ),
           key: r.pubkey.toBase58(),
@@ -66,9 +67,7 @@ export const HomeView = () => {
         <Col flex="auto" xxl={15} xs={24} className="governance-container">
           <div className="governance-title">
             <h1>{LABELS.REALMS}</h1>
-            <RegisterRealmButton
-              buttonProps={{ style: { marginLeft: 'auto', marginRight: 0 } }}
-            />
+            <ProgramActionBar></ProgramActionBar>
           </div>
           <List
             itemLayout="vertical"

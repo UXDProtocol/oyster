@@ -1,9 +1,9 @@
 import { PlusCircleOutlined } from '@ant-design/icons';
-import { ParsedAccount } from '@oyster/common';
+
 
 import { TransactionInstruction } from '@solana/web3.js';
 import { Button, Col, Form, Input, Modal, Row } from 'antd';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useState } from 'react';
 
 import { Governance, Realm } from '../../../../models/accounts';
@@ -14,19 +14,32 @@ import { AccountInstructionsForm } from './accountInstructionsForm';
 import { ProgramInstructionsForm } from './programInstructionsForm';
 import { TokenInstructionsForm } from './tokenInstructionsForm';
 import { MintInstructionsForm } from './mintInstructionsForm';
+import { useNativeTreasury } from '../../../../hooks/apiHooks';
+import { InstructionType } from './instructionSelector';
+import { ProgramAccount } from '../../../../models/tools/solanaSdk';
 
 export default function InstructionInput({
   realm,
   governance,
   onChange,
 }: {
-  realm: ParsedAccount<Realm>;
-  governance: ParsedAccount<Governance>;
+  realm: ProgramAccount<Realm>;
+  governance: ProgramAccount<Governance>;
   onChange?: (v: any) => void;
 }) {
   const [isFormVisible, setIsFormVisible] = useState(false);
   const [instruction, setInstruction] = useState('');
   const [form] = Form.useForm();
+  const nativeTreasury = useNativeTreasury(governance.pubkey);
+  const [coreInstructions, setCoreInstructions] = useState<InstructionType[]>(
+    [],
+  );
+
+  useEffect(() => {
+    if (nativeTreasury) {
+      setCoreInstructions([InstructionType.NativeTransfer]);
+    }
+  }, [nativeTreasury]);
 
   const updateInstruction = (instruction: string) => {
     setInstruction(instruction);
@@ -63,46 +76,49 @@ export default function InstructionInput({
         onOk={form.submit}
         okText="Create"
         onCancel={() => setIsFormVisible(false)}
-        title={`Create ${
-          governance.info.isProgramGovernance()
-            ? 'Program'
-            : governance.info.isMintGovernance()
+        title={`Create ${governance.account.isProgramGovernance()
+          ? 'Program'
+          : governance.account.isMintGovernance()
             ? 'Mint'
-            : governance.info.isTokenGovernance()
-            ? 'Token'
-            : 'Account'
-        } Governance Instruction`}
+            : governance.account.isTokenGovernance()
+              ? 'Token'
+              : 'Account'
+          } Governance Instruction`}
       >
-        {governance.info.isProgramGovernance() && (
+        {governance.account.isProgramGovernance() && (
           <ProgramInstructionsForm
             form={form}
             onCreateInstruction={onCreateInstruction}
             realm={realm}
             governance={governance}
+            coreInstructions={coreInstructions}
           ></ProgramInstructionsForm>
         )}
-        {governance.info.isMintGovernance() && (
+        {governance.account.isMintGovernance() && (
           <MintInstructionsForm
             form={form}
             onCreateInstruction={onCreateInstruction}
             realm={realm}
             governance={governance}
+            coreInstructions={coreInstructions}
           ></MintInstructionsForm>
         )}
-        {governance.info.isTokenGovernance() && (
+        {governance.account.isTokenGovernance() && (
           <TokenInstructionsForm
             form={form}
             onCreateInstruction={onCreateInstruction}
             realm={realm}
             governance={governance}
+            coreInstructions={coreInstructions}
           ></TokenInstructionsForm>
         )}
-        {governance.info.isAccountGovernance() && (
+        {governance.account.isAccountGovernance() && (
           <AccountInstructionsForm
             form={form}
             onCreateInstruction={onCreateInstruction}
             realm={realm}
             governance={governance}
+            coreInstructions={coreInstructions}
           ></AccountInstructionsForm>
         )}
       </Modal>
