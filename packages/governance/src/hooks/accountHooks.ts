@@ -8,18 +8,19 @@ import {
 } from '../models/accounts';
 import { GovernanceAccountParser } from '../models/serialisation';
 
-import { ParsedAccount } from '@oyster/common';
+import { GenericAccountParser, ParsedAccountBase } from '@oyster/common';
 import { MemcmpFilter } from '../models/core/api';
 import { useAccountChangeTracker } from '../contexts/GovernanceContext';
 import { useRpcContext } from './useRpcContext';
 import { none, Option, some } from '../tools/option';
 import { getGovernanceAccounts } from '../models/api';
+import { ProgramAccount } from '../models/tools/solanaSdk';
 
 // Fetches Governance program account using the given key and subscribes to updates
 export function useGovernanceAccountByPubkey<
   TAccount extends GovernanceAccount
 >(accountClass: GovernanceAccountClass, pubkey: PublicKey | undefined) {
-  const [account, setAccount] = useState<Option<ParsedAccount<TAccount>>>();
+  const [account, setAccount] = useState<Option<ProgramAccount<TAccount>>>();
 
   const { connection, endpoint } = useRpcContext();
   const accountChangeTracker = useAccountChangeTracker();
@@ -54,7 +55,7 @@ export function useGovernanceAccountByPubkey<
           const account = GovernanceAccountParser(accountClass)(
             new PublicKey(update.pubkey),
             update.accountInfo,
-          ) as ParsedAccount<TAccount>;
+          ) as ProgramAccount<TAccount>;
 
           setAccount(some(account));
         }
@@ -96,7 +97,7 @@ export function useGovernanceAccountsByFilter<
   TAccount extends GovernanceAccount
 >(accountClass: GovernanceAccountClass, filters: (MemcmpFilter | undefined)[]) {
   const [accounts, setAccounts] = useState<
-    Record<string, ParsedAccount<TAccount>>
+    Record<string, ProgramAccount<TAccount>>
   >({});
 
   const { connection, endpoint, programId } = useRpcContext();
@@ -141,7 +142,7 @@ export function useGovernanceAccountsByFilter<
             const account = GovernanceAccountParser(accountClass)(
               new PublicKey(update.pubkey),
               update.accountInfo,
-            ) as ParsedAccount<TAccount>;
+            ) as ProgramAccount<TAccount>;
 
             setAccounts((acts: any) => {
               if (isMatch) {
@@ -221,4 +222,54 @@ export function useGovernanceAccountByFilter<
   throw new Error(
     `Filters ${filters} returned multiple accounts ${accounts} for ${accountClass.name} while a single result was expected`,
   );
+}
+
+// Fetches Account using the given PDA args
+export function useAccountByPda(
+  getPda: () => Promise<PublicKey | undefined>,
+  pdaArgs: any[],
+) {
+  const { connection } = useRpcContext();
+  const [account, setAccount] = useState<Option<ParsedAccountBase>>();
+
+  const pdaArgsKey = JSON.stringify(pdaArgs);
+
+  useEffect(() => {
+    const sub = (async () => {
+      const pdaPk = await getPda();
+      let subId = 0;
+
+      if (pdaPk) {
+        try {
+          const accountInfo = await connection.getAccountInfo(pdaPk);
+
+          if (accountInfo) {
+            setAccount(some(GenericAccountParser(pdaPk, accountInfo)));
+          } else {
+            setAccount(none());
+          }
+        } catch (ex) {
+          console.error(`Can't load ${pdaPk.toBase58()} account`, ex);
+          setAccount(none());
+        }
+
+        subId = connection.onAccountChange(pdaPk, a =>
+          setAccount(some(GenericAccountParser(pdaPk, a))),
+        );
+      } else {
+        setAccount(none());
+      }
+
+      return () => {
+        subId > 0 && connection.removeAccountChangeListener(subId);
+      };
+    })();
+
+    return () => {
+      sub.then(dispose => dispose());
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pdaArgsKey]);
+
+  return account;
 }

@@ -33,7 +33,9 @@ export type ENV = 'mainnet-beta' | 'testnet' | 'devnet' | 'localnet';
 export const ENDPOINTS = [
   {
     name: 'mainnet-beta' as ENV,
-    endpoint: 'https://billowing-proud-glitter.solana-mainnet.quiknode.pro/7f49d7f436c2d3af0738270d90dee86962f13a82/',
+    endpoint:
+      process.env.REACT_APP_MAINNET_RPC ||
+      'https://explorer-api.mainnet-beta.solana.com',
     ChainId: ChainId.MainnetBeta,
   },
   {
@@ -43,7 +45,9 @@ export const ENDPOINTS = [
   },
   {
     name: 'devnet' as ENV,
-    endpoint: 'https://explorer-api.devnet.solana.com',
+    endpoint:
+      process.env.REACT_APP_DEVNET_RPC ||
+      'https://explorer-api.devnet.solana.com',
     ChainId: ChainId.Devnet,
   },
   {
