@@ -1,11 +1,6 @@
 import { Form, FormInstance, InputNumber } from 'antd';
-import {
-  ExplorerLink,
-
-  useMint,
-  useWallet,
-} from '@oyster/common';
-import { Governance, Realm } from '../../../../models/accounts';
+import { ExplorerLink, useMint, useWallet } from '@oyster/common';
+import { Governance, Realm } from '@solana/spl-governance';
 import { TransactionInstruction } from '@solana/web3.js';
 import React from 'react';
 
@@ -13,7 +8,7 @@ import { formDefaults } from '../../../../tools/forms';
 import { useAnchorIdlAddress } from '../../../../tools/anchor/anchorHooks';
 
 import { useRpcContext } from '../../../../hooks/useRpcContext';
-import { createSetRealmConfig } from '../../../../models/createSetRealmConfig';
+import { createSetRealmConfig } from '@solana/spl-governance';
 import Checkbox from 'antd/lib/checkbox/Checkbox';
 import {
   parseMintSupplyFraction,
@@ -26,7 +21,7 @@ import {
   getMintMinAmountAsDecimal,
 } from '../../../../tools/units';
 import { parseMinTokensToCreate } from '../../../../components/governanceConfigFormItem/governanceConfigFormItem';
-import { ProgramAccount } from '../../../../models/tools/solanaSdk';
+import { ProgramAccount } from '@solana/spl-governance';
 
 export interface RealmConfigValues {
   minCommunityTokensToCreateGovernance: number | string;
@@ -86,7 +81,9 @@ export const RealmConfigForm = ({
       programVersion,
       realm.pubkey,
       governance.pubkey,
-      values.removeCouncil === true ? undefined : realm.account.config.councilMint,
+      values.removeCouncil === true
+        ? undefined
+        : realm.account.config.councilMint,
       parseMintSupplyFraction(values.communityMintMaxVoteWeightFraction),
       // Use minCommunityTokensToCreateGovernance.toString() in case the number is larger than number
       new BN(minCommunityTokensToCreateGovernance.toString()),
@@ -164,7 +161,9 @@ export const RealmConfigForm = ({
       )}
       <RealmMintSupplyConfigFormItem
         communityMintAddress={realm.account.communityMint}
-        maxVoteWeightSource={realm.account.config.communityMintMaxVoteWeightSource}
+        maxVoteWeightSource={
+          realm.account.config.communityMintMaxVoteWeightSource
+        }
       ></RealmMintSupplyConfigFormItem>
     </Form>
   );

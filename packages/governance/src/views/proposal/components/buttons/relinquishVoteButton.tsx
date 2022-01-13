@@ -9,11 +9,11 @@ import {
   ProposalState,
   TokenOwnerRecord,
   VoteRecord,
-} from '../../../../models/accounts';
+} from '@solana/spl-governance';
 import { useAccountChangeTracker } from '../../../../contexts/GovernanceContext';
 import { relinquishVote } from '../../../../actions/relinquishVote';
 import { useRpcContext } from '../../../../hooks/useRpcContext';
-import { ProgramAccount } from '../../../../models/tools/solanaSdk';
+import { ProgramAccount } from '@solana/spl-governance';
 
 const { confirm } = Modal;
 export function RelinquishVoteButton({

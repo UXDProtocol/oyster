@@ -1,18 +1,18 @@
-import { Account, PublicKey, TransactionInstruction } from '@solana/web3.js';
+import { Keypair, PublicKey, TransactionInstruction } from '@solana/web3.js';
 
-import { Proposal } from '../models/accounts';
+import { Proposal } from '@solana/spl-governance';
 
-import { withRemoveInstruction } from '../models/withRemoveInstruction';
+import { withRemoveInstruction } from '@solana/spl-governance';
 import { sendTransactionWithNotifications } from '../tools/transactions';
-import { RpcContext } from '../models/core/api';
-import { ProgramAccount } from '../models/tools/solanaSdk';
+import { RpcContext } from '@solana/spl-governance';
+import { ProgramAccount } from '@solana/spl-governance';
 
 export const removeInstruction = async (
   { connection, wallet, programId, walletPubkey }: RpcContext,
   proposal: ProgramAccount<Proposal>,
   proposalInstruction: PublicKey,
 ) => {
-  let signers: Account[] = [];
+  let signers: Keypair[] = [];
   let instructions: TransactionInstruction[] = [];
 
   const governanceAuthority = walletPubkey;

@@ -1,4 +1,3 @@
-
 import { Button, Col, Modal, Row } from 'antd';
 import React from 'react';
 
@@ -14,15 +13,15 @@ import {
   ProposalState,
   TokenOwnerRecord,
   VoteRecord,
-} from '../../../../models/accounts';
+} from '@solana/spl-governance';
 
-import { YesNoVote } from '../../../../models/instructions';
+import { YesNoVote } from '@solana/spl-governance';
 
 import { castVote } from '../../../../actions/castVote';
 
 import { useRpcContext } from '../../../../hooks/useRpcContext';
 import { Option } from '../../../../tools/option';
-import { ProgramAccount } from '../../../../models/tools/solanaSdk';
+import { ProgramAccount } from '@solana/spl-governance';
 
 const { confirm } = Modal;
 export function CastVoteButton({

@@ -1,6 +1,6 @@
 import { Button, Popover, Space } from 'antd';
 import React, { useRef } from 'react';
-import { Realm } from '../../../models/accounts';
+import { Realm } from '@solana/spl-governance';
 import { DepositGoverningTokensButton } from './depositGoverningTokensButton';
 import { RegisterGovernanceButton } from './registerGovernanceButton';
 import { SetRealmAuthorityButton } from './setRealmAuthorityButton';
@@ -8,12 +8,14 @@ import { WithdrawGoverningTokensButton } from './withdrawGoverningTokensButton';
 import { useWallet } from '@oyster/common';
 import { MoreOutlined } from '@ant-design/icons';
 import { CreateTreasuryAccountButton } from './createTreasuryAccountButton';
-import { ProgramAccount } from '../../../models/tools/solanaSdk';
+import { ProgramAccount } from '@solana/spl-governance';
 
 export function RealmActionBar({
   realm,
+  showSettings = true,
 }: {
   realm: ProgramAccount<Realm> | undefined;
+  showSettings?: boolean;
 }) {
   const parentRef = useRef<HTMLDivElement>(null);
   const { publicKey, connected } = useWallet();
@@ -27,7 +29,8 @@ export function RealmActionBar({
   const showSetRealmAuthority =
     realm.account.authority?.toBase58() === publicKey?.toBase58();
 
-  const showSettings = showCreateNewGovernance || showSetRealmAuthority;
+  const settingsVisible =
+    showSettings && (showCreateNewGovernance || showSetRealmAuthority);
 
   return (
     <Space>
@@ -52,7 +55,7 @@ export function RealmActionBar({
         tokenName="Council"
       ></WithdrawGoverningTokensButton>
 
-      {showSettings && (
+      {settingsVisible && (
         <div ref={parentRef} className="realm-popup-action-container">
           <Popover
             title="Realm Settings"

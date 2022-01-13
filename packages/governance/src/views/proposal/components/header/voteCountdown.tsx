@@ -2,8 +2,8 @@ import { Space } from 'antd';
 import moment from 'moment';
 import React, { useEffect, useState } from 'react';
 
-import { Governance, Proposal } from '../../../../models/accounts';
-import { ProgramAccount } from '../../../../models/tools/solanaSdk';
+import { Governance, Proposal } from '@solana/spl-governance';
+import { ProgramAccount } from '@solana/spl-governance';
 
 interface CountdownState {
   days: number;

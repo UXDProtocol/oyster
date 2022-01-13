@@ -1,10 +1,10 @@
-import { Account, PublicKey, TransactionInstruction } from '@solana/web3.js';
+import { Keypair, PublicKey, TransactionInstruction } from '@solana/web3.js';
 
-import { SignatoryRecord } from '../models/accounts';
-import { withSignOffProposal } from '../models/withSignOffProposal';
+import { SignatoryRecord } from '@solana/spl-governance';
+import { withSignOffProposal } from '@solana/spl-governance';
 import { sendTransactionWithNotifications } from '../tools/transactions';
-import { RpcContext } from '../models/core/api';
-import { ProgramAccount } from '../models/tools/solanaSdk';
+import { RpcContext } from '@solana/spl-governance';
+import { ProgramAccount } from '@solana/spl-governance';
 
 export const signOffProposal = async (
   { connection, wallet, programId }: RpcContext,
@@ -12,7 +12,7 @@ export const signOffProposal = async (
   signatoryRecord: ProgramAccount<SignatoryRecord>,
   signatory: PublicKey,
 ) => {
-  let signers: Account[] = [];
+  let signers: Keypair[] = [];
   let instructions: TransactionInstruction[] = [];
 
   withSignOffProposal(

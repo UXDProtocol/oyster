@@ -10,8 +10,8 @@ import {
   Proposal,
   ProposalInstruction,
   TokenOwnerRecord,
-} from '../../../../../models/accounts';
-import { ProgramAccount } from '../../../../../models/tools/solanaSdk';
+} from '@solana/spl-governance';
+import { ProgramAccount } from '@solana/spl-governance';
 
 export function FlagInstructionErrorButton({
   proposal,

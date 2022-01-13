@@ -1,13 +1,13 @@
 import { PublicKey, TransactionInstruction } from '@solana/web3.js';
 
-import { withCreateAccountGovernance } from '../models/withCreateAccountGovernance';
-import { GovernanceType } from '../models/enums';
-import { GovernanceConfig } from '../models/accounts';
-import { withCreateProgramGovernance } from '../models/withCreateProgramGovernance';
+import { withCreateAccountGovernance } from '@solana/spl-governance';
+import { GovernanceType } from '@solana/spl-governance';
+import { GovernanceConfig } from '@solana/spl-governance';
+import { withCreateProgramGovernance } from '@solana/spl-governance';
 import { sendTransactionWithNotifications } from '../tools/transactions';
-import { withCreateMintGovernance } from '../models/withCreateMintGovernance';
-import { withCreateTokenGovernance } from '../models/withCreateTokenGovernance';
-import { RpcContext } from '../models/core/api';
+import { withCreateMintGovernance } from '@solana/spl-governance';
+import { withCreateTokenGovernance } from '@solana/spl-governance';
+import { RpcContext } from '@solana/spl-governance';
 
 export const registerGovernance = async (
   { connection, wallet, programId, walletPubkey }: RpcContext,

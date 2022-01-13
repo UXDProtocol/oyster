@@ -1,6 +1,6 @@
 import { Form, FormInstance, InputNumber, Spin } from 'antd';
 import { ExplorerLink, utils } from '@oyster/common';
-import { Governance } from '../../../../models/accounts';
+import { Governance } from '@solana/spl-governance';
 import {
   AccountInfo,
   ParsedAccountData,
@@ -17,7 +17,7 @@ import {
   getMintMinAmountAsDecimal,
   parseMintNaturalAmountFromDecimal,
 } from '../../../../tools/units';
-import { ProgramAccount } from '../../../../models/tools/solanaSdk';
+import { ProgramAccount } from '@solana/spl-governance';
 
 const { useMint } = contexts.Accounts;
 

@@ -18,7 +18,7 @@ import {
 } from '@oyster/common';
 
 import { useKeyParam } from '../../hooks/useKeyParam';
-import { Proposal, ProposalState } from '../../models/accounts';
+import { Proposal, ProposalState } from '@solana/spl-governance';
 import { ClockCircleOutlined } from '@ant-design/icons';
 import { GovernanceBadge } from '../../components/GovernanceBadge/governanceBadge';
 import { getProposalUrl } from '../../tools/routeTools';
@@ -144,10 +144,12 @@ export const GovernanceView = () => {
                     )} days`}</Text>
                     <Text type="secondary">{`min tokens to create proposal: ${formatMintNaturalAmountAsDecimal(
                       communityMintInfo,
-                      governance.account.config.minCommunityTokensToCreateProposal,
+                      governance.account.config
+                        .minCommunityTokensToCreateProposal,
                     )} (${formatMintSupplyFractionAsDecimalPercentage(
                       communityMintInfo,
-                      governance.account.config.minCommunityTokensToCreateProposal,
+                      governance.account.config
+                        .minCommunityTokensToCreateProposal,
                     )})`}</Text>
                   </Space>
                 </Space>

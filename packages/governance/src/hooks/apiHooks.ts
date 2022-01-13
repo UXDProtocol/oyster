@@ -13,8 +13,8 @@ import {
   SignatoryRecord,
   TokenOwnerRecord,
   VoteRecord,
-} from '../models/accounts';
-import { pubkeyFilter } from '../models/core/api';
+} from '@solana/spl-governance';
+import { pubkeyFilter } from '@solana/spl-governance';
 import {
   useAccountByPda,
   useGovernanceAccountByPda,
@@ -111,6 +111,12 @@ export function useWalletTokenOwnerRecord(
     },
     [wallet?.publicKey, governingTokenMint, realm],
   )?.tryUnwrap();
+}
+
+export function useTokenOwnerRecordByOwner(ownerPk: PublicKey | undefined) {
+  return useGovernanceAccountsByFilter<TokenOwnerRecord>(TokenOwnerRecord, [
+    pubkeyFilter(1 + 32 + 32, ownerPk),
+  ]);
 }
 
 /// Returns all TokenOwnerRecords for the current wallet
