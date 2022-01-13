@@ -1,12 +1,12 @@
-import { Account, PublicKey, TransactionInstruction } from '@solana/web3.js';
+import { Keypair, PublicKey, TransactionInstruction } from '@solana/web3.js';
 
-import { GovernanceConfig } from '../models/accounts';
+import { GovernanceConfig } from '@solana/spl-governance';
 
 import { sendTransactionWithNotifications } from '../tools/transactions';
 
-import { withCreateTokenGovernance } from '../models/withCreateTokenGovernance';
-import { RpcContext } from '../models/core/api';
-import { withCreateSplTokenAccount } from '../models/splToken/withCreateSplTokenAccount';
+import { withCreateTokenGovernance } from '@solana/spl-governance';
+import { RpcContext } from '@solana/spl-governance';
+import { withCreateSplTokenAccount } from '../tools/sdk/token/splToken';
 
 export const createTreasuryAccount = async (
   { connection, wallet, programId, walletPubkey }: RpcContext,
@@ -16,7 +16,7 @@ export const createTreasuryAccount = async (
   tokenOwnerRecord: PublicKey,
 ): Promise<PublicKey> => {
   let instructions: TransactionInstruction[] = [];
-  let signers: Account[] = [];
+  let signers: Keypair[] = [];
 
   const tokenAccount = await withCreateSplTokenAccount(
     instructions,

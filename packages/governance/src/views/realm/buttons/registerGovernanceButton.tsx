@@ -7,7 +7,7 @@ import { LABELS } from '../../../constants';
 
 import { Redirect } from 'react-router';
 
-import { GovernanceType } from '../../../models/enums';
+import { GovernanceType } from '@solana/spl-governance';
 import { registerGovernance } from '../../../actions/registerGovernance';
 
 import { useKeyParam } from '../../../hooks/useKeyParam';
@@ -23,9 +23,9 @@ import {
   GovernanceConfigValues,
 } from '../../../components/governanceConfigFormItem/governanceConfigFormItem';
 
-import { Realm } from '../../../models/accounts';
+import { Realm } from '@solana/spl-governance';
 import { useWalletTokenOwnerRecord } from '../../../hooks/apiHooks';
-import { ProgramAccount } from '../../../models/tools/solanaSdk';
+import { ProgramAccount } from '@solana/spl-governance';
 
 export function RegisterGovernanceButton({
   buttonProps,
@@ -147,10 +147,10 @@ export function RegisterGovernanceButton({
           <Form.Item
             name="transferAuthority"
             label={`transfer ${governanceType === GovernanceType.Program
-              ? LABELS.UPGRADE_AUTHORITY
-              : governanceType === GovernanceType.Mint
-                ? LABELS.MINT_AUTHORITY
-                : LABELS.TOKEN_OWNER
+                ? LABELS.UPGRADE_AUTHORITY
+                : governanceType === GovernanceType.Mint
+                  ? LABELS.MINT_AUTHORITY
+                  : LABELS.TOKEN_OWNER
               } to governance`}
             valuePropName="checked"
           >

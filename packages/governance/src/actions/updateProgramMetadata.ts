@@ -1,9 +1,9 @@
-import { Account, TransactionInstruction } from '@solana/web3.js';
+import { Keypair, TransactionInstruction } from '@solana/web3.js';
 
 import { sendTransactionWithNotifications } from '../tools/transactions';
-import { RpcContext } from '../models/core/api';
+import { RpcContext } from '@solana/spl-governance';
 
-import { withUpdateProgramMetadata } from '../models/withUpdateProgramMetadata';
+import { withUpdateProgramMetadata } from '@solana/spl-governance';
 
 export const updateProgramMetadata = async ({
   connection,
@@ -11,7 +11,7 @@ export const updateProgramMetadata = async ({
   programId,
   walletPubkey,
 }: RpcContext) => {
-  let signers: Account[] = [];
+  let signers: Keypair[] = [];
   let instructions: TransactionInstruction[] = [];
 
   await withUpdateProgramMetadata(instructions, programId, walletPubkey);

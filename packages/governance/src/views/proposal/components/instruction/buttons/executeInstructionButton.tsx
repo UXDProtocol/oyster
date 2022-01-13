@@ -6,7 +6,7 @@ import {
   Proposal,
   ProposalInstruction,
   ProposalState,
-} from '../../../../../models/accounts';
+} from '@solana/spl-governance';
 import { useRpcContext } from '../../../../../hooks/useRpcContext';
 import React from 'react';
 import {
@@ -16,7 +16,7 @@ import {
   RedoOutlined,
 } from '@ant-design/icons';
 import { Button, Tooltip } from 'antd';
-import { ProgramAccount } from '../../../../../models/tools/solanaSdk';
+import { ProgramAccount } from '@solana/spl-governance';
 
 export enum PlayState {
   Played,

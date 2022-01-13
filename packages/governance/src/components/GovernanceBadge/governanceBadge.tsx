@@ -1,18 +1,13 @@
-import {
-
-  TokenIcon,
-  useConnectionConfig,
-  useAccount,
-} from '@oyster/common';
+import { TokenIcon, useConnectionConfig, useAccount } from '@oyster/common';
 import { Avatar, Badge, Tooltip } from 'antd';
 import React from 'react';
-import { Governance, ProposalState, Realm } from '../../models/accounts';
+import { Governance, ProposalState, Realm } from '@solana/spl-governance';
 
 import { useProposalsByGovernance } from '../../hooks/apiHooks';
 
 import './style.less';
 import { SafetyCertificateOutlined } from '@ant-design/icons';
-import { ProgramAccount } from '../../models/tools/solanaSdk';
+import { ProgramAccount } from '@solana/spl-governance';
 
 export function GovernanceBadge({
   realm,
@@ -40,7 +35,8 @@ export function GovernanceBadge({
     <Badge
       count={
         showVotingCount
-          ? proposals.filter(p => p.account.state === ProposalState.Voting).length
+          ? proposals.filter(p => p.account.state === ProposalState.Voting)
+            .length
           : 0
       }
     >
@@ -89,13 +85,14 @@ export function GovernanceBadge({
           </Avatar>
         )}
       </div>
-      {realm?.account.authority?.toBase58() === governance.pubkey.toBase58() && (
-        <Tooltip title="realm authority">
-          <SafetyCertificateOutlined
-            style={{ position: 'absolute', left: size, top: size * 0.75 }}
-          />
-        </Tooltip>
-      )}
+      {realm?.account.authority?.toBase58() ===
+        governance.pubkey.toBase58() && (
+          <Tooltip title="realm authority">
+            <SafetyCertificateOutlined
+              style={{ position: 'absolute', left: size, top: size * 0.75 }}
+            />
+          </Tooltip>
+        )}
     </Badge>
   );
 }

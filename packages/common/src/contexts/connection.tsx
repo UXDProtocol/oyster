@@ -34,8 +34,7 @@ export const ENDPOINTS = [
   {
     name: 'mainnet-beta' as ENV,
     endpoint:
-      process.env.REACT_APP_MAINNET_RPC ||
-      'https://explorer-api.mainnet-beta.solana.com',
+      process.env.REACT_APP_MAINNET_RPC || 'https://ssc-dao.genesysgo.net',
     ChainId: ChainId.MainnetBeta,
   },
   {
@@ -47,7 +46,7 @@ export const ENDPOINTS = [
     name: 'devnet' as ENV,
     endpoint:
       process.env.REACT_APP_DEVNET_RPC ||
-      'https://explorer-api.devnet.solana.com',
+      'https://psytrbhymqlkfrhudd.dev.genesysgo.net:8899',
     ChainId: ChainId.Devnet,
   },
   {
@@ -383,7 +382,7 @@ export const sendTransaction = async (
     try {
       transaction = await wallet.signTransaction(transaction);
     } catch (ex) {
-      throw new SignTransactionError(ex);
+      throw new SignTransactionError(ex as string);
     }
   }
 

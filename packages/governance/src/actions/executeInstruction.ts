@@ -1,18 +1,18 @@
-import { Account, TransactionInstruction } from '@solana/web3.js';
+import { Keypair, TransactionInstruction } from '@solana/web3.js';
 
-import { Proposal, ProposalInstruction } from '../models/accounts';
+import { Proposal, ProposalInstruction } from '@solana/spl-governance';
 
-import { withExecuteInstruction } from '../models/withExecuteInstruction';
+import { withExecuteInstruction } from '@solana/spl-governance';
 import { sendTransactionWithNotifications } from '../tools/transactions';
-import { RpcContext } from '../models/core/api';
-import { ProgramAccount } from '../models/tools/solanaSdk';
+import { RpcContext } from '@solana/spl-governance';
+import { ProgramAccount } from '@solana/spl-governance';
 
 export const executeInstruction = async (
   { connection, wallet, programId }: RpcContext,
   proposal: ProgramAccount<Proposal>,
   instruction: ProgramAccount<ProposalInstruction>,
 ) => {
-  let signers: Account[] = [];
+  let signers: Keypair[] = [];
   let instructions: TransactionInstruction[] = [];
 
   await withExecuteInstruction(
